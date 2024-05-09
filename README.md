@@ -1,4 +1,4 @@
-# Very Fast Implementation (Approximation) of Kolmogorov-Arnold Network
+# FastKAN: Very Fast Implementation (Approximation) of Kolmogorov-Arnold Network
 
 Work in progress and as demo.
 
