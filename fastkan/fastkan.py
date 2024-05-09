@@ -30,9 +30,9 @@ class FastKANLayer(nn.Module):
         spline_weight_init_scale: float = 0.1,
     ) -> None:
         super().__init__()
-        self.layernorm = nn.LayerNorm()
+        self.layernorm = nn.LayerNorm(input_dim)
         self.rbf = RadialBasisFunction(grid_min, grid_max, num_grids)
-        self.base_activation = base_activation
+        self.base_activation = base_activation()
         self.base_linear = nn.Linear(input_dim, output_dim)
         self.spline_weight = torch.nn.Parameter(
             torch.Tensor(output_dim, input_dim, num_grids)
