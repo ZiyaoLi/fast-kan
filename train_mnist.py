@@ -1,4 +1,5 @@
-from efficient_kan import KAN
+# from efficient_kan import KAN
+from fastkan import FastKAN
 
 # Train on MNIST
 import torch
@@ -23,7 +24,7 @@ trainloader = DataLoader(trainset, batch_size=64, shuffle=True)
 valloader = DataLoader(valset, batch_size=64, shuffle=False)
 
 # Define model
-model = KAN([28 * 28, 64, 10])
+model = FastKAN([28 * 28, 64, 10])
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 # Define optimizer

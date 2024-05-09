@@ -278,3 +278,4 @@ class KAN(torch.nn.Module):
             layer.regularization_loss(regularize_activation, regularize_entropy)
             for layer in self.layers
         )
+
