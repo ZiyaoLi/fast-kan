@@ -163,3 +163,4 @@ cython_debug/
 
 # PyTorch Datasets
 data/
+nogit/

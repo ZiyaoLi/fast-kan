@@ -21,3 +21,5 @@ The rationale of doing so is that these RBF functions well approximate the B-spl
 3. FastKAN is 3.33x compared with efficient_kan in forward speed. (see [notebook](test_running_time.ipynb), 742us -> 223us on V100)
 
 More importantly this approximation suggests that KAN is equivalent to adding an RBF transformation to the inputs some place in the model. Someone may dig deeper into this for expression or approximation theories.
+
+![Validation accuracy across different training epochs on MNIST](img/val_curves.png)
