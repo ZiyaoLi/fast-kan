@@ -10,13 +10,15 @@ class RadialBasisFunction(nn.Module):
         grid_min: float = -2.,
         grid_max: float = 2.,
         num_grids: int = 8,
+        denominator: float = None,
     ):
         super().__init__()
         grid = torch.linspace(grid_min, grid_max, num_grids)
         self.grid = torch.nn.Parameter(grid, requires_grad=False)
+        self.denominator = denominator or (grid_max - grid_min) / (num_grids - 1)
 
     def forward(self, x):
-        return torch.exp(-(x[..., None] - self.grid) ** 2)
+        return torch.exp(-((x[..., None] - self.grid) / self.denominator) ** 2)
 
 class FastKANLayer(nn.Module):
     def __init__(
@@ -26,26 +28,31 @@ class FastKANLayer(nn.Module):
         grid_min: float = -2.,
         grid_max: float = 2.,
         num_grids: int = 8,
+        use_base_update: bool = True,
         base_activation = nn.SiLU,
         spline_weight_init_scale: float = 0.1,
     ) -> None:
         super().__init__()
         self.layernorm = nn.LayerNorm(input_dim)
         self.rbf = RadialBasisFunction(grid_min, grid_max, num_grids)
-        self.base_activation = base_activation()
-        self.base_linear = nn.Linear(input_dim, output_dim)
+        self.use_base_update = use_base_update
+        if use_base_update:
+            self.base_activation = base_activation()
+            self.base_linear = nn.Linear(input_dim, output_dim)
         self.spline_weight = torch.nn.Parameter(
             torch.Tensor(output_dim, input_dim, num_grids)
         )
         nn.init.trunc_normal_(self.spline_weight, mean=0.0, std=spline_weight_init_scale)
 
     def forward(self, x):
-        base = self.base_linear(self.base_activation(x))
         spline_basis = self.rbf(self.layernorm(x))
-        spline = torch.einsum(
+        ret = torch.einsum(
             "...in,oin->...o", spline_basis, self.spline_weight
         )
-        return base + spline
+        if self.use_base_update:
+            base = self.base_linear(self.base_activation(x))
+            ret = ret + base
+        return ret
 
 
 class FastKAN(nn.Module):
