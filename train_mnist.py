@@ -34,7 +34,7 @@ scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.8)
 
 # Define loss
 criterion = nn.CrossEntropyLoss()
-for epoch in range(10):
+for epoch in range(20):
     # Train
     model.train()
     with tqdm(trainloader) as pbar:

@@ -2,7 +2,7 @@
 
 *Work in progress*
 
-This repository contains a very fast implementation of Kolmogorov-Arnold Network (KAN). The forward time of FaskKAN is 3+ times faster than [efficient KAN](https://github.com/Blealtan/efficient-kan), and the implementation is a LOT easier.
+This repository contains a very fast implementation of Kolmogorov-Arnold Network (KAN). The forward time of FaskKAN is 3.33x faster than [efficient KAN](https://github.com/Blealtan/efficient-kan), and the implementation is a LOT easier.
 
 The original implementation of KAN is [pykan](https://github.com/KindXiaoming/pykan).
 
@@ -18,6 +18,6 @@ The rationale of doing so is that these RBF functions well approximate the B-spl
 
 2. Used LayerNorm to scale inputs to the range of spline grids, so there is no need to adjust the grids.
 
-3. FastKAN is 3.20x compared with efficient_kan in forward speed. (see [notebook](test_running_time.ipynb), 726us -> 227us on V100)
+3. FastKAN is 3.33x compared with efficient_kan in forward speed. (see [notebook](test_running_time.ipynb), 742us -> 223us on V100)
 
 More importantly this approximation suggests that KAN is equivalent to adding an RBF transformation to the inputs some place in the model. Someone may dig deeper into this for expression or approximation theories.
