@@ -22,6 +22,6 @@ The rationale of doing so is that these RBF functions well approximate the B-spl
 
 2. Used LayerNorm to scale inputs to the range of spline grids, so there is no need to adjust the grids.
 
-3. FastKAN is 2.54x compared with efficient_kan in forward speed. (see [notebook](test_running_time.ipynb), 690us -> 272us on V100)
+3. FastKAN is 3.20x compared with efficient_kan in forward speed. (see [notebook](test_running_time.ipynb), 726us -> 227us on V100)
 
 More importantly this approximation suggests that KAN is equivalent to adding an RBF transformation to the inputs some place in the model. Someone may dig deeper into this for expression or approximation theories.
