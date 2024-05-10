@@ -1,16 +1,12 @@
 # FastKAN: Very Fast Implementation (Approximation) of Kolmogorov-Arnold Network
 
-Work in progress and as demo.
+*Work in progress*
 
-This repository contains a very fast implementation of Kolmogorov-Arnold Network (KAN).
+This repository contains a very fast implementation of Kolmogorov-Arnold Network (KAN). The forward time of FaskKAN is 3+ times faster than [efficient KAN](https://github.com/Blealtan/efficient-kan).
 
-The original implementation of KAN is available [here](https://github.com/KindXiaoming/pykan).
+The original implementation of KAN is [pykan](https://github.com/KindXiaoming/pykan).
 
-The implementation of efficient KAN is available [here](https://github.com/Blealtan/efficient-kan).
-
-Demo code and efficient_kan code in this repo is from efficient_kan thanks to Blealtan.
-
-The code is just a demo of how to approximately calculate Kolmogorov-Arnold Networks, with demo quality.
+FastKAN:
 
 1. Used Gaussian Radial Basis Functions to approximate the B-spline basis, which is the bottleneck of KAN and efficient KAN:
 
