@@ -16,7 +16,9 @@ The code is just a demo of how to approximately calculate Kolmogorov-Arnold Netw
 
 $$b_{i}(u)=\exp(-(u-u_i)^2)$$
 
-The rationale of doing so is that these RBF functions well approximate the B-spline basis (up to a linear transformation) and are very easy to calculate (as long as the grids are uniform). Results are shown in `draw_spline_basis.ipynb`.
+The rationale of doing so is that these RBF functions well approximate the B-spline basis (up to a linear transformation) and are very easy to calculate (as long as the grids are uniform). Results are shown in the figure below (code in `draw_spline_basis.ipynb`). 
+
+![RBF well approximates 3-order B-spline basis.](img/compare_basis.png)
 
 2. I used LayerNorm to scale inputs to the range of spline grids, so there is no need (yet to test) to adjust the grids.
 
