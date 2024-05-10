@@ -2,7 +2,7 @@
 
 *Work in progress*
 
-This repository contains a very fast implementation of Kolmogorov-Arnold Network (KAN). The forward time of FaskKAN is 3+ times faster than [efficient KAN](https://github.com/Blealtan/efficient-kan).
+This repository contains a very fast implementation of Kolmogorov-Arnold Network (KAN). The forward time of FaskKAN is 3+ times faster than [efficient KAN](https://github.com/Blealtan/efficient-kan), and the implementation is a LOT easier.
 
 The original implementation of KAN is [pykan](https://github.com/KindXiaoming/pykan).
 
