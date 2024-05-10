@@ -18,7 +18,7 @@ class RadialBasisFunction(nn.Module):
         grid_min: float = -2.,
         grid_max: float = 2.,
         num_grids: int = 8,
-        denominator: float = None,
+        denominator: float = None,  # larger denominators lead to smoother basis
     ):
         super().__init__()
         grid = torch.linspace(grid_min, grid_max, num_grids)
