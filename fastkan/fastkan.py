@@ -4,6 +4,14 @@ import torch.nn.functional as F
 import math
 from typing import *
 
+class SplineLinear(nn.Linear):
+    def __init__(self, in_features: int, out_features: int, init_scale: float = 0.1, **kw) -> None:
+        self.init_scale = init_scale
+        super().__init__(in_features, out_features, bias=False, **kw)
+
+    def reset_parameters(self) -> None:
+        nn.init.trunc_normal_(self.weight, mean=0, std=self.init_scale)
+
 class RadialBasisFunction(nn.Module):
     def __init__(
         self,
@@ -35,20 +43,18 @@ class FastKANLayer(nn.Module):
         super().__init__()
         self.layernorm = nn.LayerNorm(input_dim)
         self.rbf = RadialBasisFunction(grid_min, grid_max, num_grids)
+        self.spline_linear = SplineLinear(input_dim * num_grids, output_dim, spline_weight_init_scale)
         self.use_base_update = use_base_update
         if use_base_update:
             self.base_activation = base_activation()
             self.base_linear = nn.Linear(input_dim, output_dim)
-        self.spline_weight = torch.nn.Parameter(
-            torch.Tensor(output_dim, input_dim, num_grids)
-        )
-        nn.init.trunc_normal_(self.spline_weight, mean=0.0, std=spline_weight_init_scale)
 
     def forward(self, x):
         spline_basis = self.rbf(self.layernorm(x))
-        ret = torch.einsum(
-            "...in,oin->...o", spline_basis, self.spline_weight
-        )
+        ret = self.spline_linear(spline_basis.view(*spline_basis.shape[:-2], -1))
+        # ret = torch.einsum(
+        #     "...in,oin->...o", spline_basis, self.spline_weight
+        # )
         if self.use_base_update:
             base = self.base_linear(self.base_activation(x))
             ret = ret + base
@@ -62,6 +68,7 @@ class FastKAN(nn.Module):
         grid_min: float = -2.,
         grid_max: float = 2.,
         num_grids: int = 8,
+        use_base_update: bool = True,
         base_activation = nn.SiLU,
         spline_weight_init_scale: float = 0.1,
     ) -> None:
@@ -72,6 +79,7 @@ class FastKAN(nn.Module):
                 grid_min=grid_min,
                 grid_max=grid_max,
                 num_grids=num_grids,
+                use_base_update=use_base_update,
                 base_activation=base_activation,
                 spline_weight_init_scale=spline_weight_init_scale,
             ) for in_dim, out_dim in zip(layers_hidden[:-1], layers_hidden[1:])
