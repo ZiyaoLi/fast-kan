@@ -69,7 +69,7 @@ class FastKAN(nn.Module):
         grid_max: float = 2.,
         num_grids: int = 8,
         use_base_update: bool = True,
-        base_activation = nn.SiLU,
+        base_activation = F.silu,
         spline_weight_init_scale: float = 0.1,
     ) -> None:
         super().__init__()
