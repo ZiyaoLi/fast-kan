@@ -56,7 +56,7 @@ class FastKANLayer(nn.Module):
             spline_basis = self.rbf(x)
         ret = self.spline_linear(spline_basis.view(*spline_basis.shape[:-2], -1))
         if self.use_base_update:
-            base = self.base_linear(self.base_activation(x))
+            base = self.base_linear(self.base_activation()(x))
             ret = ret + base
         return ret
 
