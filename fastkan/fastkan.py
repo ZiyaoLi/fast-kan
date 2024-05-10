@@ -37,7 +37,7 @@ class FastKANLayer(nn.Module):
         grid_max: float = 2.,
         num_grids: int = 8,
         use_base_update: bool = True,
-        base_activation = nn.SiLU,
+        base_activation = F.silu,
         spline_weight_init_scale: float = 0.1,
     ) -> None:
         super().__init__()
@@ -46,15 +46,15 @@ class FastKANLayer(nn.Module):
         self.spline_linear = SplineLinear(input_dim * num_grids, output_dim, spline_weight_init_scale)
         self.use_base_update = use_base_update
         if use_base_update:
-            self.base_activation = base_activation()
+            self.base_activation = base_activation
             self.base_linear = nn.Linear(input_dim, output_dim)
 
-    def forward(self, x):
-        spline_basis = self.rbf(self.layernorm(x))
+    def forward(self, x, time_benchmark=False):
+        if not time_benchmark:
+            spline_basis = self.rbf(self.layernorm(x))
+        else:
+            spline_basis = self.rbf(x)
         ret = self.spline_linear(spline_basis.view(*spline_basis.shape[:-2], -1))
-        # ret = torch.einsum(
-        #     "...in,oin->...o", spline_basis, self.spline_weight
-        # )
         if self.use_base_update:
             base = self.base_linear(self.base_activation(x))
             ret = ret + base
