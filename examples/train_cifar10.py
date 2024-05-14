@@ -1,3 +1,19 @@
+# Copyright 2024 Li, Ziyao
+# Copyright 2024 @Blealtan
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 # from efficient_kan import KAN
 from fastkan import FastKAN as KAN
 
@@ -14,17 +30,17 @@ from tqdm import tqdm
 transform = transforms.Compose(
     [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
 )
-trainset = torchvision.datasets.MNIST(
+trainset = torchvision.datasets.CIFAR10(
     root="./data", train=True, download=True, transform=transform
 )
-valset = torchvision.datasets.MNIST(
+valset = torchvision.datasets.CIFAR10(
     root="./data", train=False, download=True, transform=transform
 )
 trainloader = DataLoader(trainset, batch_size=64, shuffle=True)
 valloader = DataLoader(valset, batch_size=64, shuffle=False)
 
 # Define model
-model = KAN([28 * 28, 64, 10])
+model = KAN([3072, 256, 10])
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 # Define optimizer
@@ -39,7 +55,7 @@ for epoch in range(20):
     model.train()
     with tqdm(trainloader) as pbar:
         for i, (images, labels) in enumerate(pbar):
-            images = images.view(-1, 28 * 28).to(device)
+            images = images.view(-1, 3072).to(device)
             optimizer.zero_grad()
             output = model(images)
             loss = criterion(output, labels.to(device))
@@ -54,7 +70,7 @@ for epoch in range(20):
     val_accuracy = 0
     with torch.no_grad():
         for images, labels in valloader:
-            images = images.view(-1, 28 * 28).to(device)
+            images = images.view(-1, 3072).to(device)
             output = model(images)
             val_loss += criterion(output, labels.to(device)).item()
             val_accuracy += (
