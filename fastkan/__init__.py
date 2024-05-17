@@ -13,4 +13,8 @@
 # limitations under the License.
 
 
-from .fastkan import FastKAN, FastKANLayer
+from .fastkan import (
+    FastKANLayer,
+    FastKAN,
+    AttentionWithFastKANTransform,
+)
