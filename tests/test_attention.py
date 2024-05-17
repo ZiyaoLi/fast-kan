@@ -19,4 +19,4 @@ bias = torch.rand(*batch_shape, num_q, num_kv)
 out = fast_kan_att(q, k, v, bias=bias)
 assert out.shape == q.shape, out.shape
 
-print("attention with fast kan transform got correct shapes.")
+print("test attention: attention with fast kan transform got correct shapes.")
