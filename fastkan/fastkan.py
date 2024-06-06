@@ -91,14 +91,23 @@ class FastKANLayer(nn.Module):
         num_pts: int = 1000,
         num_extrapolate_bins: int = 2
     ):
-        '''this function returns the learned curves in a FastKANLayer.'''
-        num_grids = self.rbf.num_grids
+        '''this function returns the learned curves in a FastKANLayer.
+        input_index: the selected index of the input, in [0, input_dim) .
+        output_index: the selected index of the output, in [0, output_dim) .
+        num_pts: num of points sampled for the curve.
+        num_extrapolate_bins (N_e): num of bins extrapolating from the given grids. The curve 
+            will be calculate in the range of [grid_min - h * N_e, grid_max + h * N_e].
+        '''
+        ng = self.rbf.num_grids
+        h = self.rbf.denominator
+        assert input_index < self.input_dim
+        assert output_index < self.output_dim
         w = self.spline_linear.weight[
-            output_index, input_index * num_grids : (input_index + 1) * num_grids
+            output_index, input_index * ng : (input_index + 1) * ng
         ]   # num_grids,
         x = torch.linspace(
-            self.rbf.grid_min - num_extrapolate_bins * self.rbf.denominator,
-            self.rbf.grid_max + num_extrapolate_bins * self.rbf.denominator,
+            self.rbf.grid_min - num_extrapolate_bins * h,
+            self.rbf.grid_max + num_extrapolate_bins * h,
             num_pts
         )   # num_pts, num_grids
         with torch.no_grad():
