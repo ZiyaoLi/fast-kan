@@ -36,6 +36,9 @@ class RadialBasisFunction(nn.Module):
         denominator: float = None,  # larger denominators lead to smoother basis
     ):
         super().__init__()
+        self.grid_min = grid_min
+        self.grid_max = grid_max
+        self.num_grids = num_grids
         grid = torch.linspace(grid_min, grid_max, num_grids)
         self.grid = torch.nn.Parameter(grid, requires_grad=False)
         self.denominator = denominator or (grid_max - grid_min) / (num_grids - 1)
@@ -52,11 +55,17 @@ class FastKANLayer(nn.Module):
         grid_max: float = 2.,
         num_grids: int = 8,
         use_base_update: bool = True,
+        use_layernorm: bool = True,
         base_activation = F.silu,
         spline_weight_init_scale: float = 0.1,
     ) -> None:
         super().__init__()
-        self.layernorm = nn.LayerNorm(input_dim)
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.layernorm = None
+        if use_layernorm:
+            assert input_dim > 1, "Do not use layernorms on 1D inputs. Set `use_layernorm=False`."
+            self.layernorm = nn.LayerNorm(input_dim)
         self.rbf = RadialBasisFunction(grid_min, grid_max, num_grids)
         self.spline_linear = SplineLinear(input_dim * num_grids, output_dim, spline_weight_init_scale)
         self.use_base_update = use_base_update
@@ -64,8 +73,8 @@ class FastKANLayer(nn.Module):
             self.base_activation = base_activation
             self.base_linear = nn.Linear(input_dim, output_dim)
 
-    def forward(self, x, time_benchmark=False):
-        if not time_benchmark:
+    def forward(self, x, use_layernorm=True):
+        if self.layernorm is not None and use_layernorm:
             spline_basis = self.rbf(self.layernorm(x))
         else:
             spline_basis = self.rbf(x)
@@ -74,6 +83,27 @@ class FastKANLayer(nn.Module):
             base = self.base_linear(self.base_activation(x))
             ret = ret + base
         return ret
+
+    def plot_curve(
+        self,
+        input_index: int,
+        output_index: int,
+        num_pts: int = 1000,
+        num_extrapolate_bins: int = 2
+    ):
+        '''this function returns the learned curves in a FastKANLayer.'''
+        num_grids = self.rbf.num_grids
+        w = self.spline_linear.weight[
+            output_index, input_index * num_grids : (input_index + 1) * num_grids
+        ]   # num_grids,
+        x = torch.linspace(
+            self.rbf.grid_min - num_extrapolate_bins * self.rbf.denominator,
+            self.rbf.grid_max + num_extrapolate_bins * self.rbf.denominator,
+            num_pts
+        )   # num_pts, num_grids
+        with torch.no_grad():
+            y = (w * self.rbf(x.to(w.dtype))).sum(-1)
+        return x, y
 
 
 class FastKAN(nn.Module):

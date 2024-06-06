@@ -44,6 +44,10 @@ The rationale of doing so is that these RBF functions well approximate the B-spl
 
 5. More importantly, the approximation made in FastKAN suggests that KAN is equivalent to a certain RBF Network. This finding bridges between RBF Networks and KANs.
 
+## Plot the learned curves
+
+FastKANLayer supports users to plot the learned curves dim-by-dim. See [notebook](notebooks/plot_activation.ipynb) for an example usage.
+
 
 ## Cite This Work
 
