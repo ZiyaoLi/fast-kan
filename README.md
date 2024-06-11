@@ -30,7 +30,7 @@ python examples/train_mnist.py
 
 $$b_{i}(u)=\exp\left(-\left(\frac{u-u_i}{h}\right)^2\right)$$
 
-The rationale of doing so is that these RBF functions well approximate the B-spline basis (up to a linear transformation) and are very easy to calculate (as long as the grids are uniform). Results are shown in the figure below (code in [notebook](notebooks/draw_spline_basis.ipynb)). 
+The rationale of doing so is that these RBF functions well approximate the B-spline basis (up to a linear transformation) and are very easy to calculate (as long as the grids are uniform). Results are shown in the figure below (code in [notebook](notebooks/test_spline_basis.ipynb)). 
 
 ![RBF well approximates 3-order B-spline basis.](img/compare_basis.png)
 
@@ -46,7 +46,7 @@ The rationale of doing so is that these RBF functions well approximate the B-spl
 
 ## Plot the learned curves
 
-FastKANLayer supports users to plot the learned curves dim-by-dim. See [notebook](notebooks/plot_activation.ipynb) for an example usage.
+FastKANLayer supports users to plot the learned curves dim-by-dim. See [notebook](notebooks/example_plot_activation.ipynb) for an example usage.
 
 
 ## Cite This Work
