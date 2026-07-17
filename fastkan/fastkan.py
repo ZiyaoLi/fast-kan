@@ -115,6 +115,93 @@ class FastKANLayer(nn.Module):
         return x, y
 
 
+class FastKANLayerV2(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        output_dim: int,
+        grid_min: float = -2.,
+        grid_max: float = 2.,
+        num_grids: int = 8,
+        use_base_update: bool = True,
+        use_layernorm: bool = True,
+        base_activation = F.silu,
+    ) -> None:
+        super().__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.num_grids = num_grids
+        self.layernorm = None
+        if use_layernorm:
+            assert input_dim > 1, "Do not use layernorms on 1D inputs. Set `use_layernorm=False`."
+            self.layernorm = nn.LayerNorm(input_dim)
+        self.rbf = RadialBasisFunction(grid_min, grid_max, num_grids)
+        
+        # Split weights: 
+        # 1. Linear layer for summing over grids: maps (num_grids, 1) -> 1
+        self.grid_linear = nn.Linear(num_grids, 1, bias=False)
+        # 2. Linear layer for mapping input_dim to output_dim
+        self.dim_linear = nn.Linear(input_dim, output_dim, bias=False)
+        
+        self.reset_parameters()
+        
+        self.use_base_update = use_base_update
+        if use_base_update:
+            self.base_activation = base_activation
+            self.base_linear = nn.Linear(input_dim, output_dim)
+
+    def reset_parameters(self) -> None:
+        # init scale = 1 / (num_grid * input_dim)
+        scale = 1.0 / (self.num_grids * self.input_dim)
+        nn.init.trunc_normal_(self.grid_linear.weight, mean=0, std=scale)
+        nn.init.trunc_normal_(self.dim_linear.weight, mean=0, std=scale)
+
+    def forward(self, x, use_layernorm=True):
+        if self.layernorm is not None and use_layernorm:
+            spline_basis = self.rbf(self.layernorm(x))
+        else:
+            spline_basis = self.rbf(x)
+        
+        # spline_basis: [batch, ..., input_dim, num_grids]
+        
+        # Step 1: Sum over grids using nn.Linear
+        # [batch, ..., input_dim, num_grids] -> [batch, ..., input_dim, 1]
+        reduced_basis = self.grid_linear(spline_basis)
+        
+        # Step 2: Use nn.Linear to map input_dim to output_dim
+        # [batch, ..., input_dim] -> [batch, ..., output_dim]
+        ret = self.dim_linear(reduced_basis.squeeze(-1))
+        
+        if self.use_base_update:
+            base = self.base_linear(self.base_activation(x))
+            ret = ret + base
+        return ret
+
+    def plot_curve(
+        self,
+        input_index: int,
+        output_index: int,
+        num_pts: int = 1000,
+        num_extrapolate_bins: int = 2
+    ):
+        h = self.rbf.denominator
+        assert input_index < self.input_dim
+        assert output_index < self.output_dim
+        
+        # The effective weight for a specific input-output pair across grids is:
+        # grid_weight[g] * dim_weight[input_index, output_index]
+        w = self.grid_linear.weight[0, :] * self.dim_linear.weight[input_index, output_index] # num_grids
+        
+        x = torch.linspace(
+            self.rbf.grid_min - num_extrapolate_bins * h,
+            self.rbf.grid_max + num_extrapolate_bins * h,
+            num_pts
+        )
+        with torch.no_grad():
+            y = (w * self.rbf(x.to(w.dtype))).sum(-1)
+        return x, y
+
+
 class FastKAN(nn.Module):
     def __init__(
         self,
@@ -145,6 +232,34 @@ class FastKAN(nn.Module):
         return x
 
 
+class FastKANV2(nn.Module):
+    def __init__(
+        self,
+        layers_hidden: List[int],
+        grid_min: float = -2.,
+        grid_max: float = 2.,
+        num_grids: int = 8,
+        use_base_update: bool = True,
+        base_activation = F.silu,
+    ) -> None:
+        super().__init__()
+        self.layers = nn.ModuleList([
+            FastKANLayerV2(
+                in_dim, out_dim,
+                grid_min=grid_min,
+                grid_max=grid_max,
+                num_grids=num_grids,
+                use_base_update=use_base_update,
+                base_activation=base_activation,
+            ) for in_dim, out_dim in zip(layers_hidden[:-1], layers_hidden[1:])
+        ])
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+
 class AttentionWithFastKANTransform(nn.Module):
     
     def __init__(
@@ -155,19 +270,23 @@ class AttentionWithFastKANTransform(nn.Module):
         head_dim: int,
         num_heads: int,
         gating: bool = True,
+        use_v2: bool = False,
     ):
         super(AttentionWithFastKANTransform, self).__init__()
 
         self.num_heads = num_heads
         total_dim = head_dim * self.num_heads
         self.gating = gating
-        self.linear_q = FastKANLayer(q_dim, total_dim)
-        self.linear_k = FastKANLayer(k_dim, total_dim)
-        self.linear_v = FastKANLayer(v_dim, total_dim)
-        self.linear_o = FastKANLayer(total_dim, q_dim)
+        
+        layer_cls = FastKANLayerV2 if use_v2 else FastKANLayer
+        
+        self.linear_q = layer_cls(q_dim, total_dim)
+        self.linear_k = layer_cls(k_dim, total_dim)
+        self.linear_v = layer_cls(v_dim, total_dim)
+        self.linear_o = layer_cls(total_dim, q_dim)
         self.linear_g = None
         if self.gating:
-            self.linear_g = FastKANLayer(q_dim, total_dim)
+            self.linear_g = layer_cls(q_dim, total_dim)
         # precompute the 1/sqrt(head_dim)
         self.norm = head_dim**-0.5
 
